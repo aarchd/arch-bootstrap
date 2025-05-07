@@ -14,7 +14,7 @@
 #   # arch-bootstrap destination
 #   # arch-bootstrap -a x86_64 -r ftp://ftp.archlinux.org destination-64
 #
-# And then you can chroot to the destination directory (user: root, password: root):
+# And then you can chroot to the destination directory (user: root, password: 3355):
 #
 #   # chroot destination
 
@@ -117,7 +117,7 @@ configure_minimal_system() {
   local DEST=$1
   
   mkdir -p "$DEST/dev"
-  sed -ie 's/^root:.*$/root:$1$GT9AUpJe$oXANVIjIzcnmOpY07iaGi\/:14657::::::/' "$DEST/etc/shadow"
+  sed -ie 's/^root:.*$/root:$1$GT9AUpJe$uTUJeUtwcBVzlA.aYn5yK.:14657::::::/' "$DEST/etc/shadow"
   touch "$DEST/etc/group"
   echo "bootstrap" > "$DEST/etc/hostname"
 

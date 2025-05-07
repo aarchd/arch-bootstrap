@@ -45,18 +45,19 @@ extract_href() {
 }
 
 fetch() {
-  curl -L -s "$@"
+  curl -L -# -s "$@"
 }
 
 fetch_file() {
   local FILEPATH=$1
   shift
   if [[ -e "$FILEPATH" ]]; then
-    curl -L -z "$FILEPATH" -o "$FILEPATH" "$@"
+    curl -L -z "$FILEPATH" -# -o "$FILEPATH" "$@"
   else
-    curl -L -o "$FILEPATH" "$@"
+    curl -L -# -o "$FILEPATH" "$@"
   fi
 }
+
 
 uncompress() {
   local FILEPATH=$1 DEST=$2

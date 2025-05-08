@@ -20,6 +20,15 @@
 
 set -e -u -o pipefail
 
+# Define colors for colorful output
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+YELLOW="\033[0;33m"
+BLUE="\033[0;34m"
+MAGENTA="\033[0;35m"
+CYAN="\033[0;36m"
+RESET="\033[0m"
+
 # Packages needed by pacman (see get-pacman-dependencies.sh)
 PACMAN_PACKAGES=(
   acl archlinux-keyring attr brotli bzip2 curl expat glibc gpgme libarchive
@@ -27,17 +36,33 @@ PACMAN_PACKAGES=(
   krb5 e2fsprogs keyutils libidn2 libunistring gcc-libs lz4 libpsl icu libunistring zstd libxml2
 )
 BASIC_PACKAGES=(${PACMAN_PACKAGES[*]} filesystem base)
-EXTRA_PACKAGES=(coreutils bash grep gawk file tar gzip systemd sed)
+EXTRA_PACKAGES=(coreutils bash grep gawk file tar gzip systemd sed archlinuxarm-keyring)
 DEFAULT_REPO_URL="http://mirrors.kernel.org/archlinux"
 DEFAULT_ARM_REPO_URL="http://mirror.archlinuxarm.org"
 DEFAULT_X86_REPO_URL="http://mirror.archlinux32.org"
 
 stderr() { 
-  echo "$@" >&2 
+  echo -e "${RED}$@${RESET}" >&2
 }
 
 debug() {
-  stderr "--- $@"
+  echo -e "${MAGENTA}--- $@${RESET}"
+}
+
+info() {
+  echo -e "${CYAN}$@${RESET}"
+}
+
+success() {
+  echo -e "${GREEN}$@${RESET}"
+}
+
+warn() {
+  echo -e "${YELLOW}$@${RESET}"
+}
+
+error() {
+  echo -e "${RED}$@${RESET}"
 }
 
 extract_href() {
@@ -70,7 +95,7 @@ uncompress() {
     *.zst)
       zstd -dc "$FILEPATH" | tar x -C "$DEST";;
     *)
-      debug "Error: unknown package format: $FILEPATH"
+      error "Error: unknown package format: $FILEPATH"
       return 1;;
   esac
 }  
@@ -108,7 +133,7 @@ get_template_repo_url() {
 
 configure_pacman() {
   local DEST=$1 ARCH=$2
-  debug "configure DNS and pacman"
+  debug "Configuring DNS and pacman"
   cp "/etc/resolv.conf" "$DEST/etc/resolv.conf"
   SERVER=$(get_template_repo_url "$REPO_URL" "$ARCH")
   echo "Server = $SERVER" > "$DEST/etc/pacman.d/mirrorlist"
@@ -133,23 +158,23 @@ configure_minimal_system() {
 fetch_packages_list() {
   local REPO=$1 
   
-  debug "fetch packages list: $REPO/"
+  debug "Fetching packages list from: $REPO/"
   fetch "$REPO/" | extract_href | awk -F"/" '{print $NF}' | sort -rn ||
-    { debug "Error: cannot fetch packages list: $REPO"; return 1; }
+    { error "Cannot fetch packages list from: $REPO"; return 1; }
 }
 
 install_pacman_packages() {
   local BASIC_PACKAGES=$1 DEST=$2 LIST=$3 DOWNLOAD_DIR=$4
-  debug "pacman package and dependencies: $BASIC_PACKAGES"
+  debug "Installing pacman packages and dependencies: $BASIC_PACKAGES"
   
   for PACKAGE in $BASIC_PACKAGES; do
     local FILE=$(echo "$LIST" | grep -m1 "^$PACKAGE-[[:digit:]].*\(\.gz\|\.xz\|\.zst\)$")
-    test "$FILE" || { debug "Error: cannot find package: $PACKAGE"; return 1; }
+    test "$FILE" || { error "Cannot find package: $PACKAGE"; return 1; }
     local FILEPATH="$DOWNLOAD_DIR/$FILE"
     
-    debug "download package: $REPO/$FILE"
+    debug "Downloading package: $REPO/$FILE"
     fetch_file "$FILEPATH" "$REPO/$FILE"
-    debug "uncompress package: $FILEPATH"
+    debug "Uncompressing package: $FILEPATH"
     uncompress "$FILEPATH" "$DEST"
   done
 }
@@ -159,14 +184,14 @@ configure_static_qemu() {
   [[ "$ARCH" == arm* ]] && ARCH=arm
   QEMU_STATIC_BIN=$(which qemu-$ARCH-static || echo )
   [[ -e "$QEMU_STATIC_BIN" ]] ||\
-    { debug "no static qemu for $ARCH, ignoring"; return 0; }
+    { debug "No static qemu for $ARCH, ignoring"; return 0; }
   cp "$QEMU_STATIC_BIN" "$DEST/usr/bin"
 }
 
 install_packages() {
   local ARCH=$1 DEST=$2 PACKAGES=$3
-  debug "install packages: $PACKAGES"
-  LC_ALL=C chroot "$DEST" /usr/bin/pacman \
+  debug "Installing packages: $PACKAGES"
+  LC_ALL=C sudo chroot "$DEST" /usr/bin/pacman \
     --noconfirm --arch $ARCH -Sy --overwrite \* $PACKAGES
 }
 
@@ -204,9 +229,9 @@ main() {
   [[ -z "$DOWNLOAD_DIR" ]] && DOWNLOAD_DIR=$(mktemp -d)
   mkdir -p "$DOWNLOAD_DIR"
   [[ -z "$PRESERVE_DOWNLOAD_DIR" ]] && trap "rm -rf '$DOWNLOAD_DIR'" KILL TERM EXIT
-  debug "destination directory: $DEST"
-  debug "core repository: $REPO"
-  debug "temporary directory: $DOWNLOAD_DIR"
+  debug "Destination directory: $DEST"
+  debug "Core repository: $REPO"
+  debug "Temporary directory: $DOWNLOAD_DIR"
   
   # Fetch packages, install system and do a minimal configuration
   mkdir -p "$DEST"
@@ -219,10 +244,11 @@ main() {
   configure_pacman "$DEST" "$ARCH" # Pacman must be re-configured
   [[ -z "$PRESERVE_DOWNLOAD_DIR" ]] && rm -rf "$DOWNLOAD_DIR"
   
-  debug "Done!"
-  debug 
-  debug "You may now chroot or arch-chroot from package arch-install-scripts:"
-  debug "$ sudo arch-chroot $DEST"
+  success "Done!"
+  success 
+  success "You may now chroot or arch-chroot from package arch-install-scripts:"
+  success "$ sudo arch-chroot $DEST"
 }
 
 main "$@"
+

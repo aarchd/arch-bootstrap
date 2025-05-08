@@ -190,11 +190,10 @@ configure_static_qemu() {
 
 install_packages() {
   local ARCH=$1 DEST=$2 PACKAGES=$3
-  sudo mount --bind /proc "$DEST/proc"
+  debug "Fixing permissions"
   debug "Installing packages: $PACKAGES"
-  LC_ALL=C sudo chroot "$DEST" /usr/bin/pacman \
+  LC_ALL=C sudo systemd-nspawn -D "$DEST" /usr/bin/pacman \
     --noconfirm --arch $ARCH -Sy --overwrite \* $PACKAGES
-  sudo umount "$DEST/proc"
 }
 
 show_usage() {
@@ -246,10 +245,9 @@ main() {
   configure_pacman "$DEST" "$ARCH" # Pacman must be re-configured
   [[ -z "$PRESERVE_DOWNLOAD_DIR" ]] && rm -rf "$DOWNLOAD_DIR"
   
+  success 
   success "Done!"
   success 
-  success "You may now chroot or arch-chroot from package arch-install-scripts:"
-  success "$ sudo arch-chroot $DEST"
 }
 
 main "$@"

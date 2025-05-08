@@ -190,9 +190,11 @@ configure_static_qemu() {
 
 install_packages() {
   local ARCH=$1 DEST=$2 PACKAGES=$3
+  sudo mount --bind /proc "$DEST/proc"
   debug "Installing packages: $PACKAGES"
   LC_ALL=C sudo chroot "$DEST" /usr/bin/pacman \
     --noconfirm --arch $ARCH -Sy --overwrite \* $PACKAGES
+  sudo umount "$DEST/proc"
 }
 
 show_usage() {

@@ -152,6 +152,7 @@ configure_minimal_system() {
   sed -i 's/^DownloadUser/#DownloadUser/' "$DEST/etc/pacman.conf"
   sed -i "s/^[[:space:]]*\(CheckSpace\)/# \1/" "$DEST/etc/pacman.conf"
   sed -i "s/^[[:space:]]*SigLevel[[:space:]]*=.*$/SigLevel = Never/" "$DEST/etc/pacman.conf"
+  sed -i "s/PKGEXT='.pkg.tar.xz'/PKGEXT='.pkg.tar.zst'/" "$DEST/etc/makepkg.conf"
 }
 
 fetch_packages_list() {

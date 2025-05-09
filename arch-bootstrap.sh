@@ -145,7 +145,6 @@ configure_minimal_system() {
   mkdir -p "$DEST/dev"
   sed -ie 's/^root:.*$/root:$1$GT9AUpJe$uTUJeUtwcBVzlA.aYn5yK.:14657::::::/' "$DEST/etc/shadow"
   touch "$DEST/etc/group"
-  echo "bootstrap" > "$DEST/etc/hostname"
 
   rm -f "$DEST/etc/mtab"
   echo "rootfs / rootfs rw 0 0" > "$DEST/etc/mtab"

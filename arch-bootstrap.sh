@@ -192,7 +192,7 @@ install_packages() {
   local ARCH=$1 DEST=$2 PACKAGES=$3
   debug "Fixing permissions"
   debug "Installing packages: $PACKAGES"
-  LC_ALL=C sudo systemd-nspawn -D "$DEST" /usr/bin/pacman \
+  LC_ALL=C chroot "$DEST" /usr/bin/pacman \
     --noconfirm --arch $ARCH -Sy --overwrite \* $PACKAGES
 }
 

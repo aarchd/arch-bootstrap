@@ -139,6 +139,16 @@ configure_pacman() {
   echo "Server = $SERVER" > "$DEST/etc/pacman.d/mirrorlist"
 }
 
+configure_pacman2() {
+  local DEST=$1
+  find "$DEST/etc" -type f -name '*.pacnew' | while read -r pacnew; do
+    orig="${pacnew%.pacnew}"
+    echo "Replacing $orig with $pacnew"
+    mv -f "$pacnew" "$orig"
+  done
+  sed -i "s/^[[:space:]]*\(CheckSpace\)/# \1/" "$DEST/etc/pacman.conf"
+}
+
 configure_minimal_system() {
   local DEST=$1
   
@@ -242,7 +252,7 @@ main() {
   configure_minimal_system "$DEST"
   [[ -n "$USE_QEMU" ]] && configure_static_qemu "$ARCH" "$DEST"
   install_packages "$ARCH" "$DEST" "${BASIC_PACKAGES[*]} ${EXTRA_PACKAGES[*]}"
-  configure_pacman "$DEST" "$ARCH" # Pacman must be re-configured
+  configure_pacman2 "$DEST"
   [[ -z "$PRESERVE_DOWNLOAD_DIR" ]] && rm -rf "$DOWNLOAD_DIR"
   
   success 
